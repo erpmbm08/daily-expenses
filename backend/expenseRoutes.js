@@ -83,13 +83,15 @@ router.get("/", authMiddleware, (req, res) => {
 
   db.query(sql, [req.user.id], (err, results) => {
     if (err) {
-      console.error("Load expenses error:", err);
+  console.error("Load expenses error:", err);
 
-      return res.status(500).json({
-        success: false,
-        message: "Could not load expenses.",
-      });
-    }
+  return res.status(500).json({
+    success: false,
+    message: "Could not load expenses.",
+    debug: err.message,
+    code: err.code
+  });
+}
 
     res.json({
       success: true,
