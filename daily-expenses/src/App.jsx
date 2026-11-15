@@ -831,6 +831,45 @@ function downloadDateWiseExcel() {
     );
   }
 
+  // CHART DATA: calculated from the selected month's real transactions
+  const selectedMonthTransactions = transactions.filter((item) =>
+    String(item.expense_date || "").slice(0, 10).startsWith(selectedMonth)
+  );
+
+  const weeklySpending = [1, 2, 3, 4, 5].map((week) => {
+    const total = selectedMonthTransactions.reduce((sum, item) => {
+      const date = String(item.expense_date || "").slice(0, 10);
+      const day = Number(date.slice(8, 10));
+      return Math.ceil(day / 7) === week ? sum + Number(item.amount || 0) : sum;
+    }, 0);
+    return { label: `Week ${week}`, total };
+  });
+
+  const maxWeeklySpending = Math.max(...weeklySpending.map((item) => item.total), 1);
+
+  const categoryTotal = categorySummary.reduce(
+    (sum, item) => sum + Number(item.totalAmount || 0),
+    0
+  );
+
+  const chartColors = [
+    "#5577e8", "#20b8a6", "#f5a623", "#e879a9", "#8b6be8",
+    "#38a4dc", "#e47755", "#79b85a", "#d5a43b", "#667085",
+    "#3b82f6", "#14b8a6", "#a855f7", "#ef4444"
+  ];
+
+  let donutOffset = 0;
+  const donutGradient = categorySummary.length
+    ? `conic-gradient(${categorySummary.map((item, index) => {
+        const percent = categoryTotal > 0
+          ? (Number(item.totalAmount || 0) / categoryTotal) * 100
+          : 0;
+        const start = donutOffset;
+        donutOffset += percent;
+        return `${chartColors[index % chartColors.length]} ${start}% ${donutOffset}%`;
+      }).join(", ")})`
+    : "conic-gradient(#e9edf5 0% 100%)";
+
   // MAIN DASHBOARD
   return (
     <main className="app-container">
@@ -933,6 +972,85 @@ function downloadDateWiseExcel() {
             {savingIncome ? "Saving..." : "Save Monthly Income"}
           </button>
         </form>
+      </section>
+
+      {/* SPENDING CHARTS */}
+      <section className="charts-grid">
+        <div className="add-card chart-card spending-chart-card">
+          <div className="section-heading">
+            <div>
+              <p className="welcome">SPENDING TREND</p>
+              <h3>Monthly Spending Chart</h3>
+              <p className="chart-subtitle">Expense distribution by week · {selectedMonth}</p>
+            </div>
+            <span className="summary-icon">📈</span>
+          </div>
+
+          {selectedMonthTransactions.length === 0 ? (
+            <div className="chart-empty">No spending data for this month yet.</div>
+          ) : (
+            <div className="weekly-chart" role="img" aria-label="Weekly expense bar chart">
+              {weeklySpending.map((item, index) => (
+                <div className="weekly-chart-column" key={item.label}>
+                  <strong className="bar-value">
+                    {item.total > 0 ? money(item.total) : "—"}
+                  </strong>
+                  <div className="bar-track">
+                    <div
+                      className={`bar-fill bar-color-${index + 1}`}
+                      style={{
+                        height: `${item.total > 0 ? Math.max((item.total / maxWeeklySpending) * 100, 5) : 0}%`
+                      }}
+                    />
+                  </div>
+                  <span className="bar-label">{item.label}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="chart-footnote">
+            <span className="chart-dot" />
+            <span>Weekly expense total (BDT)</span>
+          </div>
+        </div>
+
+        <div className="add-card chart-card category-chart-card">
+          <div className="section-heading">
+            <div>
+              <p className="welcome">EXPENSE BREAKDOWN</p>
+              <h3>Category Distribution</h3>
+              <p className="chart-subtitle">Where your money goes</p>
+            </div>
+            <span className="summary-icon">🍩</span>
+          </div>
+
+          {categorySummary.length === 0 || categoryTotal <= 0 ? (
+            <div className="chart-empty">No category data for this month yet.</div>
+          ) : (
+            <>
+              <div className="donut-wrap">
+                <div className="donut-chart" style={{ background: donutGradient }}>
+                  <div className="donut-hole">
+                    <small>Total Expense</small>
+                    <strong>{money(categoryTotal)}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="donut-legend">
+                {categorySummary.map((item, index) => (
+                  <div className="legend-item" key={item.category}>
+                    <span
+                      className="legend-color"
+                      style={{ background: chartColors[index % chartColors.length] }}
+                    />
+                    <span className="legend-name">{item.category}</span>
+                    <strong>{money(item.totalAmount)}</strong>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </section>
 
       {/* CATEGORY REPORT */}
