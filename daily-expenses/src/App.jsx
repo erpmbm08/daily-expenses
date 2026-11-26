@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import "./App.css";
@@ -148,7 +149,7 @@ function App() {
       setToken(result.token);
       setUser(result.user);
       setPassword("");
-      setPage("dashboard");
+      setPage("profile");
       setMessage("Login successful!");
     } catch (err) {
       setError(err.message);
@@ -353,128 +354,130 @@ function App() {
     }
   }
 
- // EXPORT CATEGORY REPORT TO EXCEL
-function downloadCategoryExcel() {
-  if (categorySummary.length === 0) {
-    setError("There is no category report to download.");
-    return;
-  }
+  // EXPORT CATEGORY REPORT TO EXCEL
+  function downloadCategoryExcel() {
+    if (categorySummary.length === 0) {
+      setError("There is no category report to download.");
+      return;
+    }
 
-  const monthlyTransactions = transactions.filter((item) => {
-    const date = String(item.expense_date || "").slice(0, 10);
-    return date.startsWith(selectedMonth);
-  });
-
-  const rows = categorySummary.map((item, index) => {
-    const categoryTransactions = monthlyTransactions
-      .filter((expense) => expense.category === item.category)
-      .map((expense) => String(expense.expense_date).slice(0, 10))
-      .filter((date) => date);
-
-    return {
-      SL: index + 1,
-      Date: [...new Set(categoryTransactions)].sort().join(", "),
-      Category: item.category,
-      "Total Expense (BDT)": Number(item.totalAmount),
-      Transactions: Number(item.transactionCount),
-    };
-  });
-
-  rows.push({
-    SL: "",
-    Date: "",
-    Category: "TOTAL",
-    "Total Expense (BDT)": categorySummary.reduce(
-      (sum, item) => sum + Number(item.totalAmount || 0),
-      0
-    ),
-    Transactions: categorySummary.reduce(
-      (sum, item) => sum + Number(item.transactionCount || 0),
-      0
-    ),
-  });
-
-  const worksheet = XLSX.utils.json_to_sheet(rows);
-
-  worksheet["!cols"] = [
-    { wch: 8 },
-    { wch: 30 },
-    { wch: 24 },
-    { wch: 22 },
-    { wch: 16 },
-  ];
-
-  const workbook = XLSX.utils.book_new();
-
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Category Report"
-  );
-
-  XLSX.writeFile(
-    workbook,
-    `Category-Report-${selectedMonth}.xlsx`
-  );
-}
-// EXPORT DATE-WISE TRANSACTIONS TO EXCEL
-function downloadDateWiseExcel() {
-  const monthlyTransactions = transactions
-    .filter((item) => {
+    const monthlyTransactions = transactions.filter((item) => {
       const date = String(item.expense_date || "").slice(0, 10);
       return date.startsWith(selectedMonth);
-    })
-    .sort((a, b) =>
-      String(a.expense_date).localeCompare(String(b.expense_date))
+    });
+
+    const rows = categorySummary.map((item, index) => {
+      const categoryTransactions = monthlyTransactions
+        .filter((expense) => expense.category === item.category)
+        .map((expense) => String(expense.expense_date).slice(0, 10))
+        .filter((date) => date);
+
+      return {
+        SL: index + 1,
+        Date: [...new Set(categoryTransactions)].sort().join(", "),
+        Category: item.category,
+        "Total Expense (BDT)": Number(item.totalAmount),
+        Transactions: Number(item.transactionCount),
+      };
+    });
+
+    rows.push({
+      SL: "",
+      Date: "",
+      Category: "TOTAL",
+      "Total Expense (BDT)": categorySummary.reduce(
+        (sum, item) => sum + Number(item.totalAmount || 0),
+        0
+      ),
+      Transactions: categorySummary.reduce(
+        (sum, item) => sum + Number(item.transactionCount || 0),
+        0
+      ),
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    worksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 30 },
+      { wch: 24 },
+      { wch: 22 },
+      { wch: 16 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Category Report"
     );
 
-  if (monthlyTransactions.length === 0) {
-    setError("No transactions found for this month.");
-    return;
+    XLSX.writeFile(
+      workbook,
+      `Category-Report-${selectedMonth}.xlsx`
+    );
   }
 
-  const rows = monthlyTransactions.map((item, index) => ({
-    SL: index + 1,
-    Date: String(item.expense_date).slice(0, 10),
-    Description: item.title,
-    Category: item.category,
-    "Amount (BDT)": Number(item.amount),
-  }));
+  // EXPORT DATE-WISE TRANSACTIONS TO EXCEL
+  function downloadDateWiseExcel() {
+    const monthlyTransactions = transactions
+      .filter((item) => {
+        const date = String(item.expense_date || "").slice(0, 10);
+        return date.startsWith(selectedMonth);
+      })
+      .sort((a, b) =>
+        String(a.expense_date).localeCompare(String(b.expense_date))
+      );
 
-  rows.push({
-    SL: "",
-    Date: "",
-    Description: "TOTAL EXPENSE",
-    Category: "",
-    "Amount (BDT)": monthlyTransactions.reduce(
-      (sum, item) => sum + Number(item.amount || 0),
-      0
-    ),
-  });
+    if (monthlyTransactions.length === 0) {
+      setError("No transactions found for this month.");
+      return;
+    }
 
-  const worksheet = XLSX.utils.json_to_sheet(rows);
+    const rows = monthlyTransactions.map((item, index) => ({
+      SL: index + 1,
+      Date: String(item.expense_date).slice(0, 10),
+      Description: item.title,
+      Category: item.category,
+      "Amount (BDT)": Number(item.amount),
+    }));
 
-  worksheet["!cols"] = [
-    { wch: 8 },
-    { wch: 16 },
-    { wch: 28 },
-    { wch: 22 },
-    { wch: 20 },
-  ];
+    rows.push({
+      SL: "",
+      Date: "",
+      Description: "TOTAL EXPENSE",
+      Category: "",
+      "Amount (BDT)": monthlyTransactions.reduce(
+        (sum, item) => sum + Number(item.amount || 0),
+        0
+      ),
+    });
 
-  const workbook = XLSX.utils.book_new();
+    const worksheet = XLSX.utils.json_to_sheet(rows);
 
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Date Wise Transactions"
-  );
+    worksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 16 },
+      { wch: 28 },
+      { wch: 22 },
+      { wch: 20 },
+    ];
 
-  XLSX.writeFile(
-    workbook,
-    `Date-Wise-Transactions-${selectedMonth}.xlsx`
-  );
-}
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      "Date Wise Transactions"
+    );
+
+    XLSX.writeFile(
+      workbook,
+      `Date-Wise-Transactions-${selectedMonth}.xlsx`
+    );
+  }
+
   // LOAD PROFILE
   async function loadProfile() {
     if (!token) return;
@@ -502,10 +505,11 @@ function downloadDateWiseExcel() {
   // INITIAL LOAD
   useEffect(() => {
     if (token) {
-      setPage("dashboard");
+      setPage("profile");
       loadExpenses();
       loadMonthlySummary(selectedMonth);
       loadCategorySummary(selectedMonth);
+      loadProfile();
     } else {
       setPage("login");
     }
@@ -769,68 +773,6 @@ function downloadDateWiseExcel() {
     );
   }
 
-  // PROFILE PAGE
-  if (page === "profile") {
-    return (
-      <main className="app-container">
-        <header className="header">
-          <div>
-            <p className="welcome">Account information</p>
-            <h1>My Profile</h1>
-          </div>
-
-          <button
-            type="button"
-            className="profile-button"
-            onClick={() => setPage("dashboard")}
-          >
-            ←
-          </button>
-        </header>
-
-        <section className="add-card profile-card">
-          <div className="profile-avatar">👤</div>
-          <h3>PERSONAL DETAILS</h3>
-
-          {profile ? (
-            <div className="profile-details">
-              <p>
-                <strong>Name</strong>
-                <span>{profile.full_name || profile.fullName || ""}</span>
-              </p>
-              <p>
-                <strong>Email</strong>
-                <span>{profile.email || ""}</span>
-              </p>
-              <p>
-                <strong>Mobile</strong>
-                <span>{profile.mobile || ""}</span>
-              </p>
-            </div>
-          ) : (
-            <p>Loading profile...</p>
-          )}
-
-          <button
-            className="save-button"
-            type="button"
-            onClick={() => setPage("dashboard")}
-          >
-            Back to Dashboard
-          </button>
-
-          <button
-            className="logout-button"
-            type="button"
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </section>
-      </main>
-    );
-  }
-
   // CHART DATA: calculated from the selected month's real transactions
   const selectedMonthTransactions = transactions.filter((item) =>
     String(item.expense_date || "").slice(0, 10).startsWith(selectedMonth)
@@ -840,12 +782,17 @@ function downloadDateWiseExcel() {
     const total = selectedMonthTransactions.reduce((sum, item) => {
       const date = String(item.expense_date || "").slice(0, 10);
       const day = Number(date.slice(8, 10));
-      return Math.ceil(day / 7) === week ? sum + Number(item.amount || 0) : sum;
+      return Math.ceil(day / 7) === week
+        ? sum + Number(item.amount || 0)
+        : sum;
     }, 0);
     return { label: `Week ${week}`, total };
   });
 
-  const maxWeeklySpending = Math.max(...weeklySpending.map((item) => item.total), 1);
+  const maxWeeklySpending = Math.max(
+    ...weeklySpending.map((item) => item.total),
+    1
+  );
 
   const categoryTotal = categorySummary.reduce(
     (sum, item) => sum + Number(item.totalAmount || 0),
@@ -870,6 +817,209 @@ function downloadDateWiseExcel() {
       }).join(", ")})`
     : "conic-gradient(#e9edf5 0% 100%)";
 
+  // PROFILE & DASHBOARD PAGE
+  if (page === "profile") {
+    return (
+      <main className="app-container">
+        <header className="header">
+          <div>
+            <p className="welcome">YOUR ACCOUNT OVERVIEW</p>
+            <h1>My Profile & Dashboard</h1>
+          </div>
+          <button
+            type="button"
+            className="profile-button"
+            onClick={() => setPage("dashboard")}
+            aria-label="Go to home page"
+            title="Go to Home Page"
+          >
+            🏠
+          </button>
+        </header>
+
+        <section className="add-card profile-card" style={{ marginBottom: "22px" }}>
+          <div className="profile-avatar">👤</div>
+          <h3>PERSONAL DETAILS</h3>
+          {profile ? (
+            <div className="profile-details">
+              <p>
+                <strong>Name</strong>
+                <span>{profile.full_name || profile.fullName || user?.fullName || ""}</span>
+              </p>
+              <p>
+                <strong>Email</strong>
+                <span>{profile.email || user?.email || ""}</span>
+              </p>
+              <p>
+                <strong>Mobile</strong>
+                <span>{profile.mobile || user?.mobile || ""}</span>
+              </p>
+            </div>
+          ) : (
+            <p>Loading profile...</p>
+          )}
+          <button
+            className="save-button"
+            type="button"
+            onClick={() => setPage("dashboard")}
+          >
+            Go to Home Page →
+          </button>
+          <button className="logout-button" type="button" onClick={logout}>
+            Logout
+          </button>
+        </section>
+
+        {error && (
+          <div className="error-message">
+            {error}
+            <button
+              type="button"
+              onClick={() => {
+                setError("");
+                loadProfile();
+                loadExpenses();
+                loadMonthlySummary(selectedMonth);
+                loadCategorySummary(selectedMonth);
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+        {message && <div className="success-message">{message}</div>}
+
+        {/* SPENDING CHARTS */}
+        <section className="charts-grid">
+          <div className="add-card chart-card spending-chart-card">
+            <div className="section-heading">
+              <div>
+                <p className="welcome">SPENDING TREND</p>
+                <h3>Monthly Spending Chart</h3>
+                <p className="chart-subtitle">
+                  Expense distribution by week · {selectedMonth}
+                </p>
+              </div>
+              <span className="summary-icon">📈</span>
+            </div>
+
+            {selectedMonthTransactions.length === 0 ? (
+              <div className="chart-empty">
+                No spending data for this month yet.
+              </div>
+            ) : (
+              <div
+                className="weekly-chart"
+                role="img"
+                aria-label="Weekly expense bar chart"
+              >
+                {weeklySpending.map((item, index) => (
+                  <div className="weekly-chart-column" key={item.label}>
+                    <strong className="bar-value">
+                      {item.total > 0 ? money(item.total) : "—"}
+                    </strong>
+                    <div className="bar-track">
+                      <div
+                        className={`bar-fill bar-color-${index + 1}`}
+                        style={{
+                          height: `${
+                            item.total > 0
+                              ? Math.max(
+                                  (item.total / maxWeeklySpending) * 100,
+                                  5
+                                )
+                              : 0
+                          }%`
+                        }}
+                      />
+                    </div>
+                    <span className="bar-label">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="chart-footnote">
+              <span className="chart-dot" />
+              <span>Weekly expense total (BDT)</span>
+            </div>
+          </div>
+
+          <div className="add-card chart-card category-chart-card">
+            <div className="section-heading">
+              <div>
+                <p className="welcome">EXPENSE BREAKDOWN</p>
+                <h3>Category Distribution</h3>
+                <p className="chart-subtitle">Where your money goes</p>
+              </div>
+              <span className="summary-icon">🍩</span>
+            </div>
+
+            {categorySummary.length === 0 || categoryTotal <= 0 ? (
+              <div className="chart-empty">
+                No category data for this month yet.
+              </div>
+            ) : (
+              <>
+                <div className="donut-wrap">
+                  <div
+                    className="donut-chart"
+                    style={{ background: donutGradient }}
+                  >
+                    <div className="donut-hole">
+                      <small>Total Expense</small>
+                      <strong>{money(categoryTotal)}</strong>
+                    </div>
+                  </div>
+                </div>
+                <div className="donut-legend">
+                  {categorySummary.map((item, index) => (
+                    <div className="legend-item" key={item.category}>
+                      <span
+                        className="legend-color"
+                        style={{
+                          background: chartColors[index % chartColors.length]
+                        }}
+                      />
+                      <span className="legend-name">{item.category}</span>
+                      <strong>{money(item.totalAmount)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* ERROR AND SUCCESS MESSAGE */}
+        {error && (
+          <div className="error-message">
+            {error}
+            <button
+              type="button"
+              onClick={() => {
+                setError("");
+                loadExpenses();
+                loadMonthlySummary(selectedMonth);
+                loadCategorySummary(selectedMonth);
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {message && (
+          <div className="success-message">{message}</div>
+        )}
+
+        <footer>
+          <p>Daily Expenses © 2026</p>
+          <small>Manage your money, manage your life.</small>
+        </footer>
+      </main>
+    );
+  }
+
   // MAIN DASHBOARD
   return (
     <main className="app-container">
@@ -878,29 +1028,61 @@ function downloadDateWiseExcel() {
           <p className="welcome">
             Welcome back{user?.fullName ? `, ${user.fullName}` : ""}
           </p>
-          <h1>Expenses</h1>
+          <section
+            className="total-card"
+            style={{
+              width: "fit-content",
+              minWidth: "265px",
+              maxWidth: "100%",
+              padding: "19px 25px",
+              margin: "8px 0 0",
+              borderRadius: "18px",
+            }}
+          >
+            <p
+              className="card-label"
+              style={{ fontSize: "13px", marginBottom: "7px" }}
+            >
+              TOTAL SPENDING
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(27px, 3.5vw, 34px)",
+                letterSpacing: "-.5px"
+              }}
+            >
+              {money(
+                transactions.reduce(
+                  (sum, item) => sum + Number(item.amount || 0),
+                  0
+                )
+              )}
+            </h2>
+            <span
+              className="transaction-count"
+              style={{
+                fontSize: "13px",
+                marginTop: "11px",
+                padding: "7px 13px"
+              }}
+            >
+              ↕ {transactions.length} Transactions
+            </span>
+          </section>
         </div>
 
         <button
           type="button"
           className="profile-button"
           onClick={loadProfile}
-          aria-label="Open profile"
+          aria-label="Open profile and dashboard"
+          title="Profile & Dashboard"
         >
           👤
         </button>
       </header>
 
-      {/* TOTAL SPENDING */}
-      <section className="total-card">
-        <p className="card-label">TOTAL SPENDING</p>
-        <h2>{money(totalExpense)}</h2>
-        <div className="transaction-count">
-          ↕ {transactions.length} Transactions
-        </div>
-      </section>
-
-      {/* MONTHLY SUMMARY */}
+      {/* MONTHLY SUMMARY - HOME PAGE */}
       <section className="add-card monthly-summary">
         <div className="section-heading">
           <div>
@@ -974,86 +1156,119 @@ function downloadDateWiseExcel() {
         </form>
       </section>
 
-      {/* SPENDING CHARTS */}
-      <section className="charts-grid">
-        <div className="add-card chart-card spending-chart-card">
-          <div className="section-heading">
-            <div>
-              <p className="welcome">SPENDING TREND</p>
-              <h3>Monthly Spending Chart</h3>
-              <p className="chart-subtitle">Expense distribution by week · {selectedMonth}</p>
-            </div>
-            <span className="summary-icon">📈</span>
-          </div>
-
-          {selectedMonthTransactions.length === 0 ? (
-            <div className="chart-empty">No spending data for this month yet.</div>
-          ) : (
-            <div className="weekly-chart" role="img" aria-label="Weekly expense bar chart">
-              {weeklySpending.map((item, index) => (
-                <div className="weekly-chart-column" key={item.label}>
-                  <strong className="bar-value">
-                    {item.total > 0 ? money(item.total) : "—"}
-                  </strong>
-                  <div className="bar-track">
-                    <div
-                      className={`bar-fill bar-color-${index + 1}`}
-                      style={{
-                        height: `${item.total > 0 ? Math.max((item.total / maxWeeklySpending) * 100, 5) : 0}%`
-                      }}
-                    />
-                  </div>
-                  <span className="bar-label">{item.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="chart-footnote">
-            <span className="chart-dot" />
-            <span>Weekly expense total (BDT)</span>
-          </div>
+      {/* ADD EXPENSE */}
+      {error && (
+        <div className="error-message">
+          {error}
+          <button type="button" onClick={() => setError("")}>
+            Dismiss
+          </button>
         </div>
+      )}
+      {message && <div className="success-message">{message}</div>}
 
-        <div className="add-card chart-card category-chart-card">
-          <div className="section-heading">
-            <div>
-              <p className="welcome">EXPENSE BREAKDOWN</p>
-              <h3>Category Distribution</h3>
-              <p className="chart-subtitle">Where your money goes</p>
-            </div>
-            <span className="summary-icon">🍩</span>
+      <section className="add-card">
+        <h3>ADD TRANSACTION</h3>
+
+        <form onSubmit={addExpense}>
+          <div className="input-box">
+            <span>✎</span>
+            <input
+              type="text"
+              placeholder="What did you pay for?"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
           </div>
 
-          {categorySummary.length === 0 || categoryTotal <= 0 ? (
-            <div className="chart-empty">No category data for this month yet.</div>
-          ) : (
-            <>
-              <div className="donut-wrap">
-                <div className="donut-chart" style={{ background: donutGradient }}>
-                  <div className="donut-hole">
-                    <small>Total Expense</small>
-                    <strong>{money(categoryTotal)}</strong>
-                  </div>
-                </div>
-              </div>
-              <div className="donut-legend">
-                {categorySummary.map((item, index) => (
-                  <div className="legend-item" key={item.category}>
-                    <span
-                      className="legend-color"
-                      style={{ background: chartColors[index % chartColors.length] }}
-                    />
-                    <span className="legend-name">{item.category}</span>
-                    <strong>{money(item.totalAmount)}</strong>
-                  </div>
+          <div className="input-box">
+            <span>৳</span>
+            <input
+              type="number"
+              min="0.01"
+              step="0.01"
+              placeholder="Enter amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="category-picker">
+            <label className="category-label">
+              SELECT CATEGORY
+            </label>
+
+            <button
+              type="button"
+              className="category-select-button"
+              onClick={() => setShowCategories(!showCategories)}
+            >
+              <span>
+                {getCategoryIcon(category)}{" "}
+                {category === "Others" && customCategory.trim()
+                  ? customCategory
+                  : category}
+              </span>
+
+              <span className="dropdown-arrow">
+                {showCategories ? "▲" : "▼"}
+              </span>
+            </button>
+
+            {showCategories && (
+              <div className="category-dropdown">
+                {categories.map((item) => (
+                  <button
+                    type="button"
+                    key={item.name}
+                    className={`dropdown-category ${
+                      category === item.name ? "selected" : ""
+                    }`}
+                    onClick={() => {
+                      setCategory(item.name);
+                      setShowCategories(false);
+
+                      if (item.name !== "Others") {
+                        setCustomCategory("");
+                      }
+                    }}
+                  >
+                    <span>
+                      {item.icon} {item.name}
+                    </span>
+                    {category === item.name && <span>✓</span>}
+                  </button>
                 ))}
               </div>
-            </>
+            )}
+          </div>
+
+          {category === "Others" && (
+            <div className="input-box custom-category-input">
+              <span>✎</span>
+              <input
+                type="text"
+                placeholder="Enter your category name"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                required
+              />
+            </div>
           )}
-        </div>
+
+          <button
+            type="submit"
+            className="save-button"
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "+ Save Expense"}
+          </button>
+        </form>
       </section>
 
-      {/* CATEGORY REPORT */}
+      {/* CATEGORY REPORT - HOME PAGE */}
       <section
         className="add-card category-report"
         style={{ marginTop: "22px" }}
@@ -1212,153 +1427,29 @@ function downloadDateWiseExcel() {
         )}
       </section>
 
-      {/* ERROR AND SUCCESS MESSAGE */}
-      {error && (
-        <div className="error-message">
-          {error}
-          <button
-            type="button"
-            onClick={() => {
-              setError("");
-              loadExpenses();
-              loadMonthlySummary(selectedMonth);
-              loadCategorySummary(selectedMonth);
-            }}
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {message && (
-        <div className="success-message">{message}</div>
-      )}
-
-      {/* ADD EXPENSE */}
-      <section className="add-card">
-        <h3>ADD TRANSACTION</h3>
-
-        <form onSubmit={addExpense}>
-          <div className="input-box">
-            <span>✎</span>
-            <input
-              type="text"
-              placeholder="What did you pay for?"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="input-box">
-            <span>৳</span>
-            <input
-              type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="Enter amount"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="category-picker">
-            <label className="category-label">
-              SELECT CATEGORY
-            </label>
-
-            <button
-              type="button"
-              className="category-select-button"
-              onClick={() => setShowCategories(!showCategories)}
-            >
-              <span>
-                {getCategoryIcon(category)}{" "}
-                {category === "Others" && customCategory.trim()
-                  ? customCategory
-                  : category}
-              </span>
-
-              <span className="dropdown-arrow">
-                {showCategories ? "▲" : "▼"}
-              </span>
-            </button>
-
-            {showCategories && (
-              <div className="category-dropdown">
-                {categories.map((item) => (
-                  <button
-                    type="button"
-                    key={item.name}
-                    className={`dropdown-category ${
-                      category === item.name ? "selected" : ""
-                    }`}
-                    onClick={() => {
-                      setCategory(item.name);
-                      setShowCategories(false);
-
-                      if (item.name !== "Others") {
-                        setCustomCategory("");
-                      }
-                    }}
-                  >
-                    <span>
-                      {item.icon} {item.name}
-                    </span>
-                    {category === item.name && <span>✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {category === "Others" && (
-            <div className="input-box custom-category-input">
-              <span>✎</span>
-              <input
-                type="text"
-                placeholder="Enter your category name"
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                required
-              />
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="save-button"
-            disabled={saving}
-          >
-            {saving ? "Saving..." : "+ Save Expense"}
-          </button>
-        </form>
-      </section>
-
       {/* RECENT ACTIVITY */}
       <section className="recent-section">
         <div
-  style={{
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap",
-    marginBottom: "15px",
-  }}
->
-  <h2>Recent Activity</h2>
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "12px",
+            flexWrap: "wrap",
+            marginBottom: "15px",
+          }}
+        >
+          <h2>Recent Activity</h2>
 
-  <button
-    type="button"
-    className="save-button"
-    onClick={downloadDateWiseExcel}
-    style={{ width: "auto", padding: "10px 16px" }}
-  >
-    📥 Export Transactions
-  </button>
-</div>
+          <button
+            type="button"
+            className="save-button"
+            onClick={downloadDateWiseExcel}
+            style={{ width: "auto", padding: "10px 16px" }}
+          >
+            📥 Export Transactions
+          </button>
+        </div>
 
         {loading ? (
           <div className="empty-state">
