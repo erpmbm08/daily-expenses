@@ -42,6 +42,7 @@ function App() {
 
   const [page, setPage] = useState("login");
   const [transactions, setTransactions] = useState([]);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
 
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -773,6 +774,20 @@ function App() {
     );
   }
 
+  // RECENT ACTIVITY: show latest 5 transactions by default
+  const sortedTransactions = [...transactions].sort((a, b) => {
+    const dateComparison = String(b.expense_date || "").localeCompare(
+      String(a.expense_date || "")
+    );
+
+    if (dateComparison !== 0) return dateComparison;
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+
+  const displayedTransactions = showAllTransactions
+    ? sortedTransactions
+    : sortedTransactions.slice(0, 5);
+
   // CHART DATA: calculated from the selected month's real transactions
   const selectedMonthTransactions = transactions.filter((item) =>
     String(item.expense_date || "").slice(0, 10).startsWith(selectedMonth)
@@ -1462,9 +1477,10 @@ function App() {
             <small>Add your first expense above.</small>
           </div>
         ) : (
-          <div className="transaction-list">
-            {transactions.map((item) => (
-              <div className="transaction-item" key={item.id}>
+          <>
+            <div className="transaction-list">
+              {displayedTransactions.map((item) => (
+                <div className="transaction-item" key={item.id}>
                 <div className="expense-icon">
                   {getCategoryIcon(item.category)}
                 </div>
@@ -1488,9 +1504,27 @@ function App() {
                     🗑️
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+
+            {transactions.length > 5 && (
+              <button
+                type="button"
+                className="save-button"
+                onClick={() => setShowAllTransactions((current) => !current)}
+                style={{
+                  display: "block",
+                  width: "auto",
+                  minWidth: "190px",
+                  margin: "18px auto 0",
+                  padding: "11px 22px",
+                }}
+              >
+                {showAllTransactions ? "Show Less" : "More Transactions"}
+              </button>
+            )}
+          </>
         )}
       </section>
 
