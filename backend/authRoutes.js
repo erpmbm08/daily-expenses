@@ -6,6 +6,16 @@ const db = require("./db");
 
 const router = express.Router();
 
+// Bangladesh mobile number validation
+const isValidBangladeshMobile = (mobile) => {
+  return /^01[3-9]\d{8}$/.test(mobile);
+};
+
+// Gmail format validation
+const isValidGmail = (email) => {
+  return /^[a-zA-Z0-9](?:[a-zA-Z0-9._+-]*[a-zA-Z0-9])?@gmail\.com$/i.test(email);
+};
+
 // User Registration
 router.post("/register", async (req, res) => {
   try {
@@ -18,7 +28,26 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    if (password.length < 8) {
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanMobile = String(mobile).trim();
+
+    // Validate Gmail
+    if (!isValidGmail(cleanEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid Gmail address ending with @gmail.com.",
+      });
+    }
+
+    // Validate Bangladesh mobile number
+    if (!isValidBangladeshMobile(cleanMobile)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid 11-digit Bangladesh mobile number starting with 013 to 019.",
+      });
+    }
+
+    if (String(password).length < 8) {
       return res.status(400).json({
         success: false,
         message: "Password must be at least 8 characters.",
@@ -31,9 +60,6 @@ router.post("/register", async (req, res) => {
         message: "Passwords do not match.",
       });
     }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const cleanMobile = mobile.trim();
 
     const checkSql =
       "SELECT id FROM users WHERE email = ? OR mobile = ?";
@@ -63,7 +89,7 @@ router.post("/register", async (req, res) => {
 
         db.query(
           insertSql,
-          [fullName.trim(), cleanEmail, cleanMobile, passwordHash],
+          [String(fullName).trim(), cleanEmail, cleanMobile, passwordHash],
           (insertError, result) => {
             if (insertError) {
               return res.status(500).json({
@@ -94,7 +120,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// User Login
+// User Login (unchanged)
 router.post("/login", (req, res) => {
   const { identifier, password } = req.body;
 
