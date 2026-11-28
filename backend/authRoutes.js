@@ -35,7 +35,7 @@ router.post("/register", async (req, res) => {
     if (!isValidGmail(cleanEmail)) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a valid Gmail address ending with @gmail.com.",
+        message: "Please enter a valid email address",
       });
     }
 
@@ -43,7 +43,7 @@ router.post("/register", async (req, res) => {
     if (!isValidBangladeshMobile(cleanMobile)) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a valid 11-digit Bangladesh mobile number starting with 013 to 019.",
+        message: "Please enter a valid phone number",
       });
     }
 
